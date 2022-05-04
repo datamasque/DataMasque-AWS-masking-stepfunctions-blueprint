@@ -32,7 +32,7 @@ Notes:
 ## Network
 
 The diagram below describes the connectivities between the DataMasque instance, AWS Lambda functions (provisioned by
-this template) and the staging RDS instance (provisioned by this template).
+this template) and the staging RDS Cluster (provisioned by this template).
 
 ![Network requirements](network.png "Network requirements")
 
@@ -93,7 +93,7 @@ parameter_overrides = "VpcId=\"vpc-xxxxxxxx\" SubnetIds=\"subnet-xxxxxxxxxxxxx\"
 
 ###### Please ensure the following network connectivities are configured after deploying the CloudFormation Stack:
 
-- The source RDS DB instance **must** allow inbound connections from the DataMasque EC2 instance. The configuration will
+- The source RDS DB Cluster **must** allow inbound connections from the DataMasque EC2 instance. The configuration will
   be replicated when creating the staging RDS.
 - The DataMasque EC2 instance **must** allow inbound connections from the **DatamasqueRun** Lambda.
 - The DataMasque EC2 instance **must** allow inbound connections from the **SqsConsumer** Lambda.
@@ -106,7 +106,7 @@ You can also execute the step function manually.
 
 ```JSON
 {
-  "DBInstanceIdentifier": "source-postgres-rds"
+  "DBClusterIdentifier": "source-postgres-rds"
 }
 ```
 
@@ -114,7 +114,7 @@ You can also execute the step function manually.
 
 The AWS SAM template creates a CloudWatch event rule that schedules a Step Function execution once a week which is
 disabled by default. To use this scheduling functionality, you will need edit the rule to specify your target
-DBInstanceIdentifier and enable the CloudWatch event rule.
+DBClusterIdentifier and enable the CloudWatch event rule.
 
 ```YAML
 Events:
@@ -124,19 +124,19 @@ Events:
       Description: Schedule to run the DATAMASQUE state machine weekly
       Enabled: False
       Schedule: "rate(7 days)"
-      Input: '{"DBInstanceIdentifier": "source-postgres-rds"}'
+      Input: '{"DBClusterIdentifier": "source-postgres-rds"}'
 
 ```
 
 ###### Notes:
 
-- The staging RDS instance created will follow the same RDS endpoint name schema as the source database with
+- The staging RDS Aurora Cluster created will follow the same RDS endpoint name schema as the source database with
   a `-datamasque` postfix after the DBInstanceIdentifier:
 
-| RDS database         | Endpoint                                                                    |
-|----------------------|-----------------------------------------------------------------------------|
-| Source RDS instance  | ``source-postgres-rds``.xxxxxxxxxx.ap-southeast-2.rds.amazonaws.com         |
-| Staging RDS instance | ``staging-postgres-datamasque``.xxxxxxxxxx.ap-southeast-2.rds.amazonaws.com |
+| RDS database               | Endpoint                                                                            |
+|----------------------------|-------------------------------------------------------------------------------------|
+| Source RDS Aurora Cluster  | ``source-postgres-rds``.cluster.xxxxxxxxxx.ap-southeast-2.rds.amazonaws.com         |
+| Staging RDS Aurora Cluster | ``staging-postgres-datamasque``.cluster.xxxxxxxxxx.ap-southeast-2.rds.amazonaws.com |
 
 - The RDS username, password and connection port will be the same as the source RDS instance.
 
@@ -150,17 +150,20 @@ Events:
 
 The following table describes the states and details of the step function definition.
 
-| Step                     | Description                                                           |
-|--------------------------|-----------------------------------------------------------------------|
-| Describe DB Snapshots    | Fetch the latest snapshot of the target RDS instance.                 |
-| Describe DB Instances    | Fetch the configuration of the target RDS instance.                   |
-| Restore DB from Snapshot | Restore the snapshot using the appropriate configuration.             |
-| Wait for DB Instance     | Wait for the instance to be available.                                |
-| Datamasque API run       | Create a masking job base don the connection id and ruleset provided. |
-| SQS SendMessage          | Send a message to a queue to wait until the job is finished.          |
-| CreateDBSnapshot         | Create a snapshot of the staging RDS db instance.                     |
-| Wait for Snapshot        | Wait for the DB Snapshot to be available.                             |
-| DeleteDBInstance         | Delete the staging RDS db instance.                                   |
+| Step                             | Description                                                           |
+|----------------------------------|-----------------------------------------------------------------------|
+| Describe DB Cluster Snapshot     | Fetch the latest snapshot of the target RDS Aurora Cluster.           |
+| Describe DB Cluster              | Fetch the configuration of the target RDS Aurora Cluster.             |
+| Restore DB Cluster from Snapshot | Restore the snapshot using the appropriate configuration.             |
+| Wait for DB Cluster              | Wait for the instance to be available.                                |
+| Create DB Instance               | Restore the snapshot using the appropriate configuration.             |
+| Wait for DB Instance             | Wait for the instance to be available.                                |
+| Datamasque API run               | Create a masking job base don the connection id and ruleset provided. |
+| SQS SendMessage                  | Send a message to a queue to wait until the job is finished.          |
+| CreateDBSnapshot                 | Create a snapshot of the staging RDS db instance.                     |
+| Wait for Snapshot                | Wait for the DB Snapshot to be available.                             |
+| DeleteDBInstance                 | Delete the staging RDS db instance.                                   |
+| DeleteDBCluster                  | Delete the staging RDS Aurora Cluster.                                |
 
 ![AWS Step Function definition](stepfunction.png "AWS Step Function")
 
