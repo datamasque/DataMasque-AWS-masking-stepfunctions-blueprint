@@ -13,7 +13,9 @@ def lambda_handler(event, context):
 
     message_body = json.loads(event["Records"][0]["body"])
     taskToken = message_body["taskToken"]
+
     db_cluster_identifier = message_body["input"]["DBClusterIdentifier"]
+    db_instance_identifier = message_body["input"]["DBInstanceIdentifier"]
 
     client_rds = boto3.client('rds')
     client_stepfunctions = boto3.client('stepfunctions')
@@ -34,6 +36,7 @@ def lambda_handler(event, context):
             taskToken=taskToken,
             output=json.dumps(
                 {
+                    "DBClusterIdentifier": db_cluster_identifier,
                     "DBInstanceIdentifier": db_instance_identifier
                 }
             )

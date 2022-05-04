@@ -1,5 +1,6 @@
 import boto3
 import logging
+import textwrap
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -22,7 +23,7 @@ def describe_db_instance(identifier):
     VpcSecurityGroupIds = [d['VpcSecurityGroupId'] for d in security_groups]
 
     parameters = {
-        "DBInstanceIdentifier": instance["DBInstanceIdentifier"] + "-datamasque",
+        "DBInstanceIdentifier": instance["DBInstanceIdentifier"] + "-dtq",
         "DBInstanceClass": instance["DBInstanceClass"],
         "Engine": instance["Engine"],
         "AvailabilityZone": instance["AvailabilityZone"],
@@ -46,21 +47,17 @@ def lambda_handler(event, context):
 
     client = boto3.client('rds')
 
+    #todo fix instance identifier lenght (max 63)
     response = client.create_db_instance(
         DBClusterIdentifier= db_cluster_identifier,
-        DBInstanceIdentifier= db_instance_identifier,
+        DBInstanceIdentifier= instance["DBInstanceIdentifier"],
         DBInstanceClass= instance["DBInstanceClass"],
-        Engine= instance["Engine"],
-        AvailabilityZone= instance["AvailabilityZone"],
-        DBSubnetGroupName= instance["DBSubnetGroupName"],
-        OptionGroupName= instance["OptionGroupName"],
-        DBParameterGroupName= instance["DBParameterGroupName"],
-        VpcSecurityGroupIds= instance["VpcSecurityGroupIds"],
-        DeletionProtection= False
+        Engine= instance["Engine"]
     )
 
     logger.info(response)
 
     return {
-        "DBClusterIdentifier": db_cluster_identifier
+        "DBClusterIdentifier": db_cluster_identifier,
+        "DBInstanceIdentifier": instance["DBInstanceIdentifier"]
     }

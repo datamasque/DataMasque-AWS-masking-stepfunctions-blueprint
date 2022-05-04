@@ -60,8 +60,7 @@ Resources:
             - Action:
                 - iam:PassRole
                 - rds:AddTagsToResource
-                - rds:RestoreDBInstanceFromDBSnapshot
-                - rds:RestoreDBClusterFromSnapshot
+                - rds:CreateDBInstance
               Effect: Allow
               Resource: "*"
 
@@ -258,6 +257,7 @@ Resources:
           - Action:
             - rds:CreateDBSnapshot
             - rds:DeleteDBInstance
+            - rds:DeleteDBCluster
             Effect: Allow
             Resource: "*"
         - Statement:

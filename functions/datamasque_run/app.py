@@ -224,7 +224,8 @@ def lambda_handler(event, context):
     user_username = datamasque_credential['username']
     user_password = datamasque_credential['password']
 
-    DBInstanceIdentifier = event["DBInstanceIdentifier"]
+    db_cluster_identifier = event["DBClusterIdentifier"]
+    db_instance_identifier = event["DBInstanceIdentifier"]
 
     user_login_res = login(base_url, user_username, user_password)
     token = {'Authorization': 'Token ' + user_login_res['key']}
@@ -242,4 +243,8 @@ def lambda_handler(event, context):
 
     run_id = response["id"]
 
-    return {'run_id': run_id, 'DBInstanceIdentifier': DBInstanceIdentifier}
+    return {
+        'run_id': run_id,
+        'DBInstanceIdentifier': db_instance_identifier,
+        'DBClusterIdentifier': db_cluster_identifier
+    }
