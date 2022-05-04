@@ -4,23 +4,23 @@ from operator import itemgetter
 
 def lambda_handler(event, context):
 
-  DBInstanceIdentifier = event["DBInstanceIdentifier"]
+  DBClusterIdentifier = event["DBClusterIdentifier"]
 
   client = boto3.client('rds')
 
-  response = client.describe_db_snapshots(
-    DBInstanceIdentifier=DBInstanceIdentifier,
+  response = client.describe_db_cluster_snapshots(
+    DBClusterIdentifier=DBClusterIdentifier,
     IncludePublic=False,
     IncludeShared=True,
   )
   
-  list = response["DBSnapshots"]
+  list = response["DBClusterSnapshots"]
   
   sorted_list = sorted(list, key=itemgetter('SnapshotCreateTime'), reverse=True)
 
   latest_snapshot_id = {
-    "DBSnapshotIdentifier": sorted_list[0]["DBSnapshotIdentifier"],
-    "DBInstanceIdentifier": DBInstanceIdentifier
+    "DBClusterSnapshotIdentifier": sorted_list[0]["DBClusterSnapshotIdentifier"],
+    "DBClusterIdentifier": DBClusterIdentifier
   }
 
   return latest_snapshot_id

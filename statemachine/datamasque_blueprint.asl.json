@@ -1,22 +1,38 @@
 {
   "Comment": "A blueprint to automate the creation of masked snapshots for a specific RDS DB instance.",
-  "StartAt": "Describe DB Snapshots",
+  "StartAt": "Describe DB Cluster Snapshots",
   "States": {
-    "Describe DB Snapshots": {
+    "Describe DB Cluster Snapshots": {
       "Type": "Task",
-      "Resource": "${DescribeDBSnapshotFunctionArn}",
-      "Next": "Describe DB Instances"
+      "Resource": "${DescribeDBClusterSnapshotFunctionArn}",
+      "Next": "Describe DB Cluster"
     },
-    "Describe DB Instances": {
+    "Describe DB Cluster": {
       "Type": "Task",
-      "Resource": "${DescribeDBInstancesFunctionArn}",
-      "Next": "Restore DB from Snapshot"
+      "Resource": "${DescribeDBClusterFunctionArn}",
+      "Next": "Restore DB Cluster from Snapshot"
     },
-    "Restore DB from Snapshot": {
+    "Restore DB Cluster from Snapshot": {
       "Type": "Task",
-      "Resource": "${RestoreDBInstanceFromSnapshotFunctionArn}",
-      "Next": "Wait for DB Instance",
-      "OutputPath": "$.DBInstance"
+      "Resource": "${RestoreDBClusterFromSnapshotFunctionArn}",
+      "Next": "Wait for Cluster"
+    },
+    "Wait for Cluster": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sqs:sendMessage.waitForTaskToken",
+      "Parameters": {
+        "MessageBody": {
+          "input.$": "$",
+          "taskToken.$": "$$.Task.Token"
+        },
+        "QueueUrl": "${RestoreDBClusterFromSnapshotSQSQueue}"
+      },
+      "Next": "Create DB Instance"
+    },
+    "Create DB Instance": {
+      "Type": "Task",
+      "Resource": "${CreateDBInstanceFunctionArn}",
+      "Next": "Wait for DB Instance"
     },
     "Wait for DB Instance": {
       "Type": "Task",
@@ -26,7 +42,7 @@
           "input.$": "$",
           "taskToken.$": "$$.Task.Token"
         },
-        "QueueUrl": "${RestoreDBInstanceFromSnapshotSQSQueue}"
+        "QueueUrl": "${CreateDBInstanceSQSQueue}"
       },
       "Next": "Datamasque API run"
     },
@@ -48,7 +64,7 @@
       "Type": "Task",
       "Resource": "arn:aws:states:::sqs:sendMessage.waitForTaskToken",
       "Parameters": {
-        "QueueUrl": "${DatamasqueBlueprintSQSQueue}",
+        "QueueUrl": "${DatamasqueRunSQSQueue}",
         "MessageBody": {
           "input.$": "$",
           "taskToken.$": "$$.Task.Token"
