@@ -50,6 +50,14 @@ this template) and the staging RDS Cluster (provisioned by this template).
 
 ### Step-by-step
 
+###### Store the DataMasque instance credentials on AWS Secrets Manager.
+
+Make sure you have created a secret with the format below:
+
+```json
+{"username":"datamasque","password":"Example$P@ssword"}
+```
+
 ###### Before deploying the template, please make sure you have the value for the following parameters:
 
 | Parameter                                                                                                              | Description                                                                                                                    |
@@ -58,8 +66,7 @@ this template) and the staging RDS Cluster (provisioned by this template).
 | SubnetIds                                                                                                              | List of Subnet IDs where the lambdas will be deployed.  <br> The AWS Lambdas provisioned by this template will be placed on ** |
 | private subnet** inside a VPC. It's recommended to provide at least two **SubnetIds** for redundancy and availability. |                                                                                                                                |
 | DatamasqueBaseUrl                                                                                                      | DataMasque instance URL with the EC2's private IP, i.e. https://\<ec2-instance-private-ip>.                                    |
-| DatmasqueUser                                                                                                          | DataMasque username.                                                                                                           |
-| DatamasquePassword                                                                                                     | DataMasque password.                                                                                                           |
+| DatamasqueSecretArn                                                                                                    | Secret with DataMasque instance credentials.                                                                                   |
 | DatamasqueConnectionId                                                                                                 | DataMasque connection ID.                                                                                                      |
 | DatamasqueRuleSetId                                                                                                    | DataMasque rulset ID.                                                                                                          |
 
@@ -80,14 +87,14 @@ version = 0.1
 [default]
 [default.deploy]
 [default.deploy.parameters]
-stack_name = "datamasque-blueprint"
+stack_name = "datamasque-blueprint-aurora"
 s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-xxxxxxxxx"
 s3_prefix = "datamasque-blueprint"
 region = "ap-southeast-2"
 capabilities = "CAPABILITY_IAM"
 image_repositories = []
 
-parameter_overrides = "VpcId=\"vpc-xxxxxxxx\" SubnetIds=\"subnet-xxxxxxxxxxxxx\" DatamasqueBaseUrl=\"https://10.11.12.13/\" DatmasqueUser=\"admin\" DatamasquePassword=\"123@321$\" DatamasqueConnectionId=\"41xxxxxe7-fxxd-xxx5-8xxe-62xxxxxxxxe62\" DatamasqueRuleSetId=\"2bxxxxxxxb-3xxc-4xxe-axxxb-c35xxxxxxxx40\""
+parameter_overrides = "VpcId=\"vpc-xxxxxxxx\" SubnetIds=\"subnet-xxxxxxxxxxxxx\" DatamasqueBaseUrl=\"https://10.11.12.13/\" DatamasqueSecretArn=\"xxxxxxxx\"  DatamasqueConnectionId=\"41xxxxxe7-fxxd-xxx5-8xxe-62xxxxxxxxe62\" DatamasqueRuleSetId=\"2bxxxxxxxb-3xxc-4xxe-axxxb-c35xxxxxxxx40\""
 
 ```
 
@@ -96,7 +103,7 @@ parameter_overrides = "VpcId=\"vpc-xxxxxxxx\" SubnetIds=\"subnet-xxxxxxxxxxxxx\"
 - The source RDS DB Cluster **must** allow inbound connections from the DataMasque EC2 instance. The configuration will
   be replicated when creating the staging RDS.
 - The DataMasque EC2 instance **must** allow inbound connections from the **DatamasqueRun** Lambda.
-- The DataMasque EC2 instance **must** allow inbound connections from the **SqsConsumer** Lambda.
+- The DataMasque EC2 instance **must** allow inbound connections from the **WaitDatamasqueRun** Lambda.
 
 ## AWS Step Function execution
 
@@ -184,9 +191,5 @@ The masked snapshot can be shared with the following methods:
 - Use an existing CI/CD pipeline to copy and re-encrypt the snapshot.
 
 ## Planned improvements
-
-- Improve handling of DataMasque instance password using AWS Secrets Manager.
 - Create the DataMasque connection with the staging RDS instance dynamically.
-- Improve the RestoreFromSnapshot API call handling to retrieve the provisioning status of the staging RDS DB instance.
 - Improve the CreateSnapshot API call to handle the snapshot availability status.
-- Support Aurora databases.

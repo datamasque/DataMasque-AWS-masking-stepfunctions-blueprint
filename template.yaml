@@ -256,6 +256,7 @@ Resources:
         - Statement:
           - Action:
             - rds:CreateDBSnapshot
+            - rds:CreateDBClusterSnapshot
             - rds:DeleteDBInstance
             - rds:DeleteDBCluster
             Effect: Allow

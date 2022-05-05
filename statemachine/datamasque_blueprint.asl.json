@@ -70,7 +70,7 @@
           "taskToken.$": "$$.Task.Token"
         }
       },
-      "Next": "CreateDBSnapshot",
+      "Next": "CreateDBClusterSnapshot",
       "Catch": [
         {
           "ErrorEquals": [
@@ -81,13 +81,13 @@
         }
       ]
     },
-    "CreateDBSnapshot": {
+    "CreateDBClusterSnapshot": {
       "Type": "Task",
       "Parameters": {
-        "DbInstanceIdentifier.$": "$.DBInstanceIdentifier",
-        "DbSnapshotIdentifier.$": "States.Format('{}-{}',$.DBInstanceIdentifier, $.Timestamp)"
+        "DbClusterIdentifier.$": "$.DBClusterIdentifier",
+        "DbClusterSnapshotIdentifier.$": "States.Format('{}-{}',$.DBClusterIdentifier, $.Timestamp)"
       },
-      "Resource": "arn:aws:states:::aws-sdk:rds:createDBSnapshot",
+      "Resource": "arn:aws:states:::aws-sdk:rds:createDBClusterSnapshot",
       "Next": "Wait for Snapshot",
       "Catch": [
         {
@@ -107,12 +107,22 @@
     },
     "DeleteDBInstance": {
       "Type": "Task",
-      "End": true,
       "Parameters": {
         "DbInstanceIdentifier.$": "$.DBInstanceIdentifier",
         "SkipFinalSnapshot": true
       },
-      "Resource": "arn:aws:states:::aws-sdk:rds:deleteDBInstance"
+      "Resource": "arn:aws:states:::aws-sdk:rds:deleteDBInstance",
+      "Next": "DeleteDBCluster"
+    },
+    "DeleteDBCluster": {
+      "Type": "Task",
+      "End": true,
+      "Parameters": {
+        "DbClusterIdentifier.$": "$.DbClusterIdentifier",
+        "SkipFinalSnapshot": true
+      },
+      "Resource": "arn:aws:states:::aws-sdk:rds:deleteDBCluster",
+      "InputPath": "$.DbInstance"
     }
   }
 }
